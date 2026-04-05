@@ -230,7 +230,7 @@
               const DATA_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${DATA_SHEET}&t=${cacheBuster}`;
               const CASH_FLOW_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${CASH_FLOW_SHEET}&t=${cacheBuster}`;
               const BUDGET_URL = `https://docs.google.com/spreadsheets/d/${BUDGET_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(BUDGET_SHEET_NAME)}&t=${cacheBuster}`;
-              const BUDGET_INDEX_URL = `https://docs.google.com/spreadsheets/d/${BUDGET_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(BUDGET_INDEX_SHEET_NAME)}&t=${cacheBuster}`;
+              const BUDGET_INDEX_URL = `https://docs.google.com/spreadsheets/d/${BUDGET_INDEX_SHEET_NAME}&t=${cacheBuster}`;
               const PURCHASE_URL = `https://docs.google.com/spreadsheets/d/${PURCHASE_SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(PURCHASE_SHEET_NAME)}&t=${cacheBuster}`;
               
               const [dataResponse, cashFlowResponse, budgetResponse, budgetIndexResponse, purchaseResponse] = await Promise.all([
@@ -1723,46 +1723,45 @@
           return (
             <div className="flex h-screen bg-gray-50 font-sans overflow-hidden">
               
-              {/* Sidebar Overlay */}
+              {/* Sidebar Overlay (Always shows when open) */}
               {isSidebarOpen && (
                   <div 
-                      className="fixed inset-0 bg-black/60 z-[90] transition-opacity backdrop-blur-sm lg:hidden"
+                      className="fixed inset-0 bg-black/60 z-[90] transition-opacity backdrop-blur-sm"
                       onClick={() => setIsSidebarOpen(false)}
                   ></div>
               )}
 
-              {/* Sidebar Drawer */}
-              <aside className={`fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-[100] transform transition-transform duration-300 ease-in-out flex flex-col lg:relative lg:translate-x-0 lg:w-64 border-r border-gray-200 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                  <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                      <h1 className="text-xl font-black text-gray-800 tracking-tight leading-tight w-full text-center">
+              {/* Universal Sidebar Drawer */}
+              <aside className={`fixed top-0 left-0 h-full w-64 bg-white shadow-2xl z-[100] transform transition-transform duration-300 ease-in-out flex flex-col border-r border-gray-200 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                  <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                      <h1 className="text-lg font-black text-gray-800 tracking-tight leading-tight w-full text-center">
                           BRANCH<br/>DASHBOARD
                       </h1>
-                      {/* Mobile Close Button */}
                       <button 
                           onClick={() => setIsSidebarOpen(false)} 
-                          className="lg:hidden p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors absolute right-4"
+                          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors absolute right-4"
                       >
-                          <X className="w-6 h-6" />
+                          <X className="w-5 h-5" />
                       </button>
                   </div>
-                  <nav className="flex-1 overflow-y-auto p-4 space-y-1.5 scrollbar-hide">
+                  <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-hide">
                       {TABS.map(tab => (
                           <button
                               key={`nav-${tab.id}`}
                               onClick={() => {
                                   setActiveTab(tab.id);
-                                  if (window.innerWidth < 1024) setIsSidebarOpen(false); // Only auto-hide on mobile/tablet
+                                  setIsSidebarOpen(false); // ALWAYS auto-hide on tab selection
                               }}
-                              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold text-[15px] transition-all duration-200 ${
+                              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 ${
                                   activeTab === tab.id ? tab.activeClass : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 border border-transparent'
                               }`}
                           >
-                              <span className="text-2xl drop-shadow-sm">{tab.icon}</span>
+                              <span className="text-lg drop-shadow-sm">{tab.icon}</span>
                               {tab.label}
                           </button>
                       ))}
                   </nav>
-                  <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+                  <div className="p-3 border-t border-gray-100 bg-gray-50/50">
                       <p className="text-xs text-gray-400 font-medium text-center">Auto-syncing active</p>
                   </div>
               </aside>
@@ -1773,10 +1772,10 @@
                 {/* Header */}
                 <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex justify-between items-center z-10 shrink-0 shadow-sm">
                   <div className="flex items-center gap-4">
-                      {/* Hamburger Button - Visible only below LG breakpoint */}
+                      {/* Hamburger Button - ALWAYS Visible */}
                       <button 
                           onClick={() => setIsSidebarOpen(true)}
-                          className="lg:hidden p-2.5 bg-white border border-gray-200 shadow-sm rounded-xl hover:bg-gray-50 text-gray-700 transition-colors focus:ring-2 focus:ring-indigo-500"
+                          className="p-2 bg-white border border-gray-200 shadow-sm rounded-lg hover:bg-gray-50 text-gray-700 transition-colors focus:ring-2 focus:ring-indigo-500"
                       >
                           <MenuIcon className="w-6 h-6" />
                       </button>
