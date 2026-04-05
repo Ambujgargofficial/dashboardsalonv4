@@ -41,7 +41,7 @@
         const { useState, useEffect, useMemo, Component, useRef } = React;
         const { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ComposedChart } = window.Recharts;
 
-        // --- MOCK LUCIDE ICONS (To make it work without importing external libraries) ---
+        // --- MOCK LUCIDE ICONS (De-duplicated & Safe) ---
         const AlertCircle = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>;
         const Loader2 = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>;
         const RefreshCw = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
@@ -61,10 +61,10 @@
         const ChevronDown = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6"/></svg>;
         const ShoppingCart = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>;
         const ExternalLink = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>;
+        const LayoutDashboard = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>;
         const MenuIcon = ({ className }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>;
-        // -----------------------------------------------------------------------------
 
-        // Anti-Crash Safety Net (Prevents White Screens)
+        // --- ERROR BOUNDARY ---
         class ErrorBoundary extends Component {
           constructor(props) {
             super(props);
@@ -77,11 +77,11 @@
             if (this.state.hasError) {
               return (
                 <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-                  <div className="bg-red-50 p-6 rounded-2xl border border-red-200 max-w-2xl w-full">
+                  <div className="bg-red-50 p-6 rounded-2xl border border-red-200 max-w-2xl w-full shadow-lg">
                     <AlertCircle className="w-10 h-10 text-red-500 mb-4" />
                     <h2 className="text-xl font-bold text-red-900 mb-2">Oops! Something went wrong.</h2>
-                    <p className="text-red-700 mb-4">A rendering error occurred. The app caught it to prevent a white screen.</p>
-                    <div className="bg-white p-4 rounded-lg overflow-auto text-xs font-mono text-red-800 border border-red-100">
+                    <p className="text-red-700 mb-4">A rendering error occurred in the application.</p>
+                    <div className="bg-white p-4 rounded-lg overflow-auto text-xs font-mono text-red-800 border border-red-100 max-h-48">
                       {this.state.errorInfo?.toString()}
                     </div>
                     <button 
@@ -98,7 +98,7 @@
           }
         }
 
-        // Anti-Hang Fetch Utility
+        // --- FETCH UTILITIES ---
         const fetchWithTimeout = async (resource, options = {}) => {
           const { timeout = 12000 } = options;
           const controller = new AbortController();
@@ -113,17 +113,16 @@
           }
         };
 
-        // Safe JSON Extractor
         const extractJson = (text, sourceName) => {
           const start = text.indexOf('{');
           const end = text.lastIndexOf('}');
           if (start === -1 || end === -1) {
-            throw new Error(`Sheet Data Format Error in ${sourceName}. Yeh error tab aata hai jab Google Sheet Private ho. Kripya dhyan dein ki sheet 'Anyone with the link can view' par set ho.`);
+            throw new Error(`Sheet Data Format Error in ${sourceName}. Make sure the Google Sheet is shared as 'Anyone with the link can view'.`);
           }
           return JSON.parse(text.substring(start, end + 1));
         };
 
-        // --- SIDEBAR TABS CONFIGURATION ---
+        // --- TABS CONFIGURATION (Compact with Emojis) ---
         const TABS = [
             { id: 'dashboard', label: 'Dashboard', icon: '📊', activeColor: 'text-indigo-700 bg-indigo-50 border-indigo-200' },
             { id: 'live', label: 'Live Cash', icon: '🟢', activeColor: 'text-emerald-700 bg-emerald-50 border-emerald-200' },
@@ -143,7 +142,7 @@
           const [managerData, setManagerData] = useState({}); 
           const [purchaseData, setPurchaseData] = useState([]); 
           
-          // UI STATE
+          // UI STATE FOR SIDEBAR
           const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
           // BUDGET STATE
@@ -215,7 +214,7 @@
 
           const BASE_DATE = new Date(2025, 10, 1).getTime(); 
 
-          // Click outside to close dropdown
+          // Click outside to close dropdown for Budget
           useEffect(() => {
               function handleClickOutside(event) {
                   if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -256,11 +255,10 @@
                 throw new Error("Main 'Data' sheet is empty or improperly formatted.");
               }
 
-              // Set to keep track of ALL unique locations across all sheets
               const extractedLocations = new Set();
 
               // ==========================================
-              // 1. Ultra-Safe Parse for 'Cash Flow' Sheet
+              // 1. Parse 'Cash Flow' Sheet
               // ==========================================
               const parsedBalances = {};
               if (cfJson?.table?.rows && cfJson.table.rows.length > 0) {
@@ -388,7 +386,7 @@
 
 
               // ==========================================
-              // 3A. DYNAMIC BUDGET PARSER - Step 1: Read Budget Index
+              // 3A. DYNAMIC BUDGET PARSER - Index
               // ==========================================
               const monthColMap = {}; 
               const availablePeriodsSet = new Set();
@@ -437,7 +435,7 @@
               }
 
               // ==========================================
-              // 3B. DYNAMIC BUDGET PARSER - Step 2: Read Plans dynamically from Index Map
+              // 3B. DYNAMIC BUDGET PARSER - Plans
               // ==========================================
               const parsedBudget = [];
               if (budgetResponse && budgetResponse.ok) {
@@ -496,7 +494,7 @@
 
 
               // ==========================================
-              // 4. Ultra-Safe Parse for Main 'Data' Sheet
+              // 4. Parse Main 'Data' Sheet
               // ==========================================
               let headers = dataJson.table.cols?.map(c => c?.label?.trim().toLowerCase() || '') || [];
               let startIndex = 0;
@@ -629,13 +627,17 @@
                           return pHeaders.findIndex(h => keywords.some(kw => h.includes(kw)));
                       };
 
-                      // Fallbacks if headers are weird: B=1, C=2, D=3, E=4, F=5, H=7
+                      // Fallbacks if headers are weird: B=1, C=2, D=3, E=4, F=5, G=6, O=14, P=15, H=7
                       let idxPLoc = getPIdx(['salon location', 'saloon location', 'location']); if (idxPLoc === -1) idxPLoc = 1;
                       let idxPDate = getPIdx(['invoice date', 'date']); if (idxPDate === -1) idxPDate = 2;
                       let idxPVendor = getPIdx(['vendor name', 'vendor']); if (idxPVendor === -1) idxPVendor = 3;
                       let idxPInvNo = getPIdx(['invoice number', 'invoice']); if (idxPInvNo === -1) idxPInvNo = 4;
                       let idxPAmt = getPIdx(['invoice amount', 'amount']); if (idxPAmt === -1) idxPAmt = 5;
                       let idxPCat = getPIdx(['category']); if (idxPCat === -1) idxPCat = 7;
+                      
+                      let idxPConsumption = getPIdx(['consumption purchase amount', 'consumption']); if (idxPConsumption === -1) idxPConsumption = 14; 
+                      let idxPRetail = getPIdx(['retail purchase amount', 'retail']); if (idxPRetail === -1) idxPRetail = 15; 
+                      let idxPBill = getPIdx(['bill photo', 'bill', 'photo']); if (idxPBill === -1) idxPBill = 6; 
 
                       for (let i = pStart; i < pJson.table.rows.length; i++) {
                           const row = pJson.table.rows[i];
@@ -666,7 +668,7 @@
                           // Normalize and Map Purchase Locations
                           const normalizedLocInput = loc.toUpperCase().replace(/\s+/g, '');
                           
-                          if (normalizedLocInput === '150') continue; // Skip '150' as requested
+                          if (normalizedLocInput === '150') continue; // Skip '150'
                           
                           const purchaseLocMap = {
                               "VAISHALI": "Vaishali",
@@ -739,7 +741,10 @@
                               location: loc,
                               vendor: row.c[idxPVendor] ? String(row.c[idxPVendor].v || row.c[idxPVendor].f || '').trim() : '',
                               invoiceNo: row.c[idxPInvNo] ? String(row.c[idxPInvNo].v || row.c[idxPInvNo].f || '').trim() : '',
-                              amount: getNum(idxPAmt)
+                              amount: getNum(idxPAmt),
+                              consumption: getNum(idxPConsumption),
+                              retail: getNum(idxPRetail),
+                              billUrl: row.c[idxPBill] ? String(row.c[idxPBill].v || row.c[idxPBill].f || '').trim() : ''
                           });
                       }
                   } catch (e) {
@@ -766,13 +771,204 @@
             fetchData();
           }, []);
 
-          // Automatically set Budget Filters to first available period if not set
+          // Helper to get session from Date (April-March)
+          const getSessionFromDate = (d) => {
+              const y = d.getFullYear();
+              const m = d.getMonth();
+              if (m >= 3) return `${y}-${y+1}`;
+              else return `${y-1}-${y}`;
+          };
+
+          // Valid Sessions for Dashboards & Budgets (From April 2025 onwards)
+          const availableSessions = useMemo(() => {
+              const sessions = new Set();
+              const limitTs = new Date(2025, 3, 1).getTime(); // Apr 1 2025
+              
+              data.forEach(r => {
+                  if (r.timestamp && r.timestamp >= limitTs) {
+                      sessions.add(getSessionFromDate(new Date(r.timestamp)));
+                  }
+              });
+              purchaseData.forEach(r => {
+                  if (r.timestamp && r.timestamp >= limitTs) {
+                      sessions.add(getSessionFromDate(new Date(r.timestamp)));
+                  }
+              });
+
+              const arr = Array.from(sessions).sort();
+              return arr.length > 0 ? arr : ['2025-2026'];
+          }, [data, purchaseData]);
+
+          // Set Defaults for Filters
           useEffect(() => {
-              if (budgetData.availablePeriods && budgetData.availablePeriods.length > 0 && !budgetYearFilter) {
-                  setBudgetYearFilter(budgetData.availablePeriods[0].year);
-                  setBudgetMonthFilter(budgetData.availablePeriods[0].month);
+              if (availableSessions.length > 0) {
+                  const latestSession = availableSessions[availableSessions.length - 1];
+                  if (!availableSessions.includes(dashboardSessionFilter)) {
+                      setDashboardSessionFilter(latestSession);
+                  }
+                  if (!availableSessions.includes(budgetSessionFilter)) {
+                      setBudgetSessionFilter(latestSession);
+                  }
               }
+          }, [availableSessions, dashboardSessionFilter, budgetSessionFilter]);
+
+          // Ensure standard Year & Month have fallbacks if empty
+          const budgetAvailableYears = useMemo(() => {
+              return Array.from(new Set((budgetData.availablePeriods || []).map(p => p.year))).sort();
           }, [budgetData]);
+          
+          const effectiveBudgetYear = budgetYearFilter || (budgetAvailableYears.length > 0 ? budgetAvailableYears[0] : '');
+
+          const budgetAvailableMonths = useMemo(() => {
+              return Array.from(new Set((budgetData.availablePeriods || []).filter(p => p.year === effectiveBudgetYear).map(p => p.month)));
+          }, [budgetData, effectiveBudgetYear]);
+
+          const effectiveBudgetMonth = budgetMonthFilter || (budgetAvailableMonths.length > 0 ? budgetAvailableMonths[0] : '');
+
+          useEffect(() => {
+              if (effectiveBudgetYear && budgetYearFilter !== effectiveBudgetYear) setBudgetYearFilter(effectiveBudgetYear);
+              if (effectiveBudgetMonth && budgetMonthFilter !== effectiveBudgetMonth) setBudgetMonthFilter(effectiveBudgetMonth);
+          }, [effectiveBudgetYear, effectiveBudgetMonth]);
+
+
+          // ==========================================
+          // DASHBOARD ANALYTICS LOGIC (Split into Session & Trend)
+          // ==========================================
+
+          // 1. Session Table & Session Bar Chart
+          const sessionDashboardStats = useMemo(() => {
+              const monthlyMap = {};
+              const sessionStartYear = parseInt(dashboardSessionFilter.split('-')[0]);
+              if (isNaN(sessionStartYear)) return { monthly: [] };
+
+              const sessionStartTs = new Date(sessionStartYear, 3, 1).getTime(); // Apr 1
+              const sessionEndTs = new Date(sessionStartYear + 1, 2, 31, 23, 59, 59, 999).getTime(); // Mar 31
+
+              const monthsList = [
+                  { label: 'Apr', month: 3, yearOffset: 0 },
+                  { label: 'May', month: 4, yearOffset: 0 },
+                  { label: 'Jun', month: 5, yearOffset: 0 },
+                  { label: 'Jul', month: 6, yearOffset: 0 },
+                  { label: 'Aug', month: 7, yearOffset: 0 },
+                  { label: 'Sep', month: 8, yearOffset: 0 },
+                  { label: 'Oct', month: 9, yearOffset: 0 },
+                  { label: 'Nov', month: 10, yearOffset: 0 },
+                  { label: 'Dec', month: 11, yearOffset: 0 },
+                  { label: 'Jan', month: 0, yearOffset: 1 },
+                  { label: 'Feb', month: 1, yearOffset: 1 },
+                  { label: 'Mar', month: 2, yearOffset: 1 },
+              ];
+
+              monthsList.forEach((m, idx) => {
+                  const y = sessionStartYear + m.yearOffset;
+                  const sortKey = `${y}-${String(m.month + 1).padStart(2, '0')}`;
+                  monthlyMap[sortKey] = { sortKey, label: `${m.label} '${String(y).slice(-2)}`, sales: 0, purchase: 0, consumption: 0, retail: 0, order: idx };
+              });
+
+              const processRow = (row, isPurchase) => {
+                  if (dashboardLocFilter !== 'All' && row.location !== dashboardLocFilter) return;
+                  if (!row.timestamp || row.timestamp < sessionStartTs || row.timestamp > sessionEndTs) return;
+
+                  const d = new Date(row.timestamp);
+                  const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  
+                  if (monthlyMap[monthKey]) {
+                      if (isPurchase) {
+                          monthlyMap[monthKey].purchase += (row.amount || 0);
+                          monthlyMap[monthKey].consumption += (row.consumption || 0);
+                          monthlyMap[monthKey].retail += (row.retail || 0);
+                      } else {
+                          monthlyMap[monthKey].sales += (row.totalPaid || 0);
+                      }
+                  }
+              };
+
+              data.forEach(r => processRow(r, false));
+              purchaseData.forEach(r => processRow(r, true));
+
+              const monthlyArr = Object.values(monthlyMap).sort((a,b) => a.order - b.order).map(item => ({
+                  ...item,
+                  purchasePercent: item.sales > 0 ? Number(((item.purchase / item.sales) * 100).toFixed(1)) : 0
+              }));
+
+              return { monthly: monthlyArr };
+          }, [data, purchaseData, dashboardLocFilter, dashboardSessionFilter]);
+
+
+          // 2. Independent Trend Charts (Last 6 Months & Last 5 Weeks)
+          const trendDashboardStats = useMemo(() => {
+              const monthlyMap = {};
+              const weeklyMap = {};
+
+              const getWeekString = (ts) => {
+                  const weekDate = new Date(ts);
+                  const day = weekDate.getDay();
+                  const diff = weekDate.getDate() - day + (day === 0 ? -6 : 1);
+                  weekDate.setDate(diff);
+                  return `Wk of ${weekDate.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}`;
+              };
+
+              const getWeekSortKey = (ts) => {
+                  const weekDate = new Date(ts);
+                  const day = weekDate.getDay();
+                  const diff = weekDate.getDate() - day + (day === 0 ? -6 : 1);
+                  weekDate.setDate(diff);
+                  return weekDate.getTime();
+              };
+
+              const processRow = (row, isPurchase) => {
+                  if (dashboardLocFilter !== 'All' && row.location !== dashboardLocFilter) return;
+                  if (!row.timestamp) return;
+
+                  const d = new Date(row.timestamp);
+                  const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  const monthLabel = d.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' });
+                  
+                  const weekKey = getWeekString(row.timestamp);
+                  const weekSortKey = getWeekSortKey(row.timestamp);
+
+                  if (!monthlyMap[monthKey]) {
+                      monthlyMap[monthKey] = { sortKey: monthKey, label: monthLabel, sales: 0, purchase: 0, consumption: 0, retail: 0 };
+                  }
+                  if (!weeklyMap[weekKey]) {
+                      weeklyMap[weekKey] = { sortKey: weekSortKey, label: weekKey, sales: 0, purchase: 0, consumption: 0, retail: 0 };
+                  }
+
+                  if (isPurchase) {
+                      monthlyMap[monthKey].purchase += (row.amount || 0);
+                      monthlyMap[monthKey].consumption += (row.consumption || 0);
+                      monthlyMap[monthKey].retail += (row.retail || 0);
+                      
+                      weeklyMap[weekKey].purchase += (row.amount || 0);
+                      weeklyMap[weekKey].consumption += (row.consumption || 0);
+                      weeklyMap[weekKey].retail += (row.retail || 0);
+                  } else {
+                      monthlyMap[monthKey].sales += (row.totalPaid || 0);
+                      weeklyMap[weekKey].sales += (row.totalPaid || 0);
+                  }
+              };
+
+              data.forEach(r => processRow(r, false));
+              purchaseData.forEach(r => processRow(r, true));
+
+              const allMonthsArr = Object.values(monthlyMap).sort((a,b) => a.sortKey.localeCompare(b.sortKey)).map(item => ({
+                  ...item,
+                  purchasePercent: item.sales > 0 ? Number(((item.purchase / item.sales) * 100).toFixed(1)) : 0
+              }));
+
+              const allWeeksArr = Object.values(weeklyMap).sort((a,b) => a.sortKey - b.sortKey).map(item => ({
+                  ...item,
+                  purchasePercent: item.sales > 0 ? Number(((item.purchase / item.sales) * 100).toFixed(1)) : 0
+              }));
+
+              // Extract exactly the last 6 months
+              const trendMonthly = allMonthsArr.slice(-6);
+              
+              // Extract exactly the last 5 weeks
+              const trendWeekly = allWeeksArr.slice(-5);
+
+              return { monthly: trendMonthly, weekly: trendWeekly };
+          }, [data, purchaseData, dashboardLocFilter]);
 
           const { startTimestamp, endTimestamp } = useMemo(() => {
             const parseLocalTime = (dateStr, isEnd) => {
@@ -789,7 +985,9 @@
 
           const filteredData = useMemo(() => {
             return data.filter(row => {
+                // Skip if doesn't match location filter
                 if (selectedLocation !== 'All' && row.location !== selectedLocation) return false;
+                // Use default global date filter ONLY IF the tab requires it
                 if (['sales', 'raw', 'expenses', 'cash', 'payment'].includes(activeTab)) {
                     if (row.timestamp < startTimestamp || row.timestamp > endTimestamp) return false;
                 }
@@ -801,6 +999,7 @@
           const filteredPurchases = useMemo(() => {
             return purchaseData.filter(row => {
                 if (selectedLocation !== 'All' && row.location !== selectedLocation) return false;
+                // Only apply date filter if we are actually viewing the purchases tab (since this data is used by Dashboard too)
                 if (activeTab === 'purchases') {
                     if (row.timestamp < startTimestamp || row.timestamp > endTimestamp) return false;
                 }
@@ -808,8 +1007,13 @@
             });
           }, [purchaseData, startTimestamp, endTimestamp, selectedLocation, activeTab]);
 
-          const totalPurchaseAmount = useMemo(() => {
-            return filteredPurchases.reduce((sum, row) => sum + row.amount, 0);
+          const { totalPurchaseAmount, totalConsumption, totalRetail } = useMemo(() => {
+            return filteredPurchases.reduce((acc, row) => {
+                acc.totalPurchaseAmount += row.amount || 0;
+                acc.totalConsumption += row.consumption || 0;
+                acc.totalRetail += row.retail || 0;
+                return acc;
+            }, { totalPurchaseAmount: 0, totalConsumption: 0, totalRetail: 0 });
           }, [filteredPurchases]);
 
           const salesTotals = useMemo(() => {
@@ -864,6 +1068,7 @@
             const dailyDataMap = {};
 
             data.forEach(row => {
+                // Important: Use original data, not filteredData, to calculate exact balances properly regardless of active tab
                 if (selectedLocation !== 'All' && row.location !== selectedLocation) return;
                 if (row.timestamp < BASE_DATE) return; 
 
@@ -914,12 +1119,11 @@
             const sortedData = [...data].filter(r => r.timestamp >= BASE_DATE).sort((a,b) => a.timestamp - b.timestamp);
 
             sortedData.forEach(row => {
-                const loc = row.location;
-                if (!loc || loc === 'Unknown') return; 
+                if (!row.location || row.location === 'Unknown') return; 
 
                 const dateObj = new Date(row.timestamp);
                 const dateKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
-                const combinedKey = `${dateKey}_${loc}`; 
+                const combinedKey = `${dateKey}_${row.location}`; 
                 
                 const cashIn = Number(row.cash) || 0;
                 const cashOut = Number(row.expenseAmount) || 0;
@@ -930,7 +1134,7 @@
                     dailyLocMap[combinedKey] = {
                         displayDate: dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
                         dateKey: dateKey,
-                        location: loc,
+                        location: row.location,
                         sysCashIn: 0,
                         sysCashOut: 0,
                         sysUpi: 0,
@@ -944,8 +1148,8 @@
                 dailyLocMap[combinedKey].sysUpi += upiIn;
                 dailyLocMap[combinedKey].sysCard += cardIn;
                 
-                locBalances[loc] += (cashIn - cashOut);
-                dailyLocMap[combinedKey].sysClosingCash = locBalances[loc]; 
+                locBalances[row.location] += (cashIn - cashOut);
+                dailyLocMap[combinedKey].sysClosingCash = locBalances[row.location]; 
             });
 
             const filteredRecords = Object.values(dailyLocMap).filter(record => {
@@ -1024,11 +1228,11 @@
           // Fetches Plan dynamically from Index and aggregates Actuals strictly for that specific Month/Year
           // ==========================================
           const budgetReportData = useMemo(() => {
-            if (!budgetYearFilter || !budgetMonthFilter) return { records: [] };
+            if (!effectiveBudgetYear || !effectiveBudgetMonth) return { records: [] };
 
             const budgetMap = {}; 
             const makeKey = (loc, head) => `${String(loc).trim().toLowerCase()}_${String(head).trim().toLowerCase()}`;
-            const targetPeriodKey = `${budgetYearFilter}-${budgetMonthFilter}`;
+            const targetPeriodKey = `${effectiveBudgetYear}-${effectiveBudgetMonth}`;
             
             // 1. Process Plan dynamically based on selected Year/Month
             const bRecords = budgetData.records || [];
@@ -1036,8 +1240,8 @@
                 const locClean = String(b.location).trim();
                 const headClean = String(b.expenseHead).trim();
                 
-                // Match Global Selection (We'll do local filters later)
-                if (selectedLocation !== 'All' && locClean.toLowerCase() !== selectedLocation.toLowerCase()) return;
+                // Do not use the global 'selectedLocation' here anymore. 
+                // We rely purely on the local budget filters to ensure independence.
                 
                 const key = makeKey(locClean, headClean);
                 if (!budgetMap[key]) {
@@ -1051,8 +1255,8 @@
 
             // 2. Fetch Actual Expenses strictly for the Selected Year/Month
             const monthNames = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
-            const targetMonthIdx = monthNames[budgetMonthFilter.toLowerCase().substring(0,3)];
-            const targetYear = parseInt(budgetYearFilter);
+            const targetMonthIdx = monthNames[effectiveBudgetMonth.toLowerCase().substring(0,3)];
+            const targetYear = parseInt(effectiveBudgetYear);
 
             if (targetMonthIdx !== undefined && !isNaN(targetYear)) {
                 const budgetStart = new Date(targetYear, targetMonthIdx, 1).getTime();
@@ -1062,15 +1266,10 @@
                 data.forEach(r => {
                     const locClean = String(r.location || 'Unknown').trim();
                     const headClean = String(r.expenseHead || 'Uncategorized / Other').trim();
-                    
-                    if (selectedLocation !== 'All' && locClean.toLowerCase() !== selectedLocation.toLowerCase()) return;
                     if (!r.expenseAmount || r.expenseAmount === 0) return; 
-
-                    // Strict filter based on selected Year & Month
                     if (!r.timestamp || r.timestamp < budgetStart || r.timestamp > budgetEnd) return;
 
                     const key = makeKey(locClean, headClean);
-                    
                     if (!budgetMap[key]) {
                         budgetMap[key] = { location: locClean, head: headClean, plan: 0, actual: 0 };
                     }
@@ -1081,15 +1280,10 @@
                 purchaseData.forEach(r => {
                     const locClean = String(r.location || 'Unknown').trim();
                     const headClean = 'Purchase Stock';
-                    
-                    if (selectedLocation !== 'All' && locClean.toLowerCase() !== selectedLocation.toLowerCase()) return;
                     if (!r.amount || r.amount === 0) return; 
-
-                    // Strict filter based on selected Year & Month
                     if (!r.timestamp || r.timestamp < budgetStart || r.timestamp > budgetEnd) return;
 
                     const key = makeKey(locClean, headClean);
-                    
                     if (!budgetMap[key]) {
                         budgetMap[key] = { location: locClean, head: headClean, plan: 0, actual: 0 };
                     }
@@ -1106,18 +1300,18 @@
             });
 
             return { records };
-          }, [budgetData, data, purchaseData, selectedLocation, budgetYearFilter, budgetMonthFilter]); 
+          }, [budgetData, data, purchaseData, effectiveBudgetYear, effectiveBudgetMonth]); 
 
           // ==========================================
           // BUDGET LOCATION VIEW (Salon-wise) LOGIC with Session & Multi-Month support
           // ==========================================
           const locationBudgetReportData = useMemo(() => {
-              if (!budgetYearFilter) return { records: [], periods: [], totals: {} };
+              if (!budgetSessionFilter && isSessionView) return { records: [], periods: [], totals: {} };
+              if (!effectiveBudgetYear && !isSessionView) return { records: [], periods: [], totals: {} };
 
-              // 1. Identify valid periods
               let validPeriods = [];
-              if (isSessionView && budgetYearFilter) {
-                  const baseYear = parseInt(budgetYearFilter);
+              if (isSessionView && budgetSessionFilter) {
+                  const baseYear = parseInt(budgetSessionFilter.split('-')[0]);
                   const nextYear = baseYear + 1;
                   const sessionMonths = [
                       { m: 'Apr', y: baseYear }, { m: 'May', y: baseYear }, { m: 'Jun', y: baseYear },
@@ -1135,14 +1329,13 @@
                   });
               } else {
                   validPeriods = budgetData.availablePeriods
-                      .filter(p => p.year === budgetYearFilter)
+                      .filter(p => p.year === effectiveBudgetYear)
                       .map(p => ({ year: p.year, month: p.month, pKey: `${p.year}-${p.month}`, displayMonth: p.month }));
                   
                   const monthOrder = { jan:1, feb:2, mar:3, apr:4, may:5, jun:6, jul:7, aug:8, sep:9, oct:10, nov:11, dec:12 };
                   validPeriods.sort((a,b) => monthOrder[a.month.toLowerCase().substring(0,3)] - monthOrder[b.month.toLowerCase().substring(0,3)]);
               }
 
-              // De-duplicate periods just in case
               const uniqueKeys = new Set();
               validPeriods = validPeriods.filter(vp => {
                   if (uniqueKeys.has(vp.pKey)) return false;
@@ -1150,7 +1343,6 @@
                   return true;
               });
 
-              // Filter by selected multiple months
               if (selectedBudgetMonths.length > 0) {
                   validPeriods = validPeriods.filter(vp => selectedBudgetMonths.some(sm => sm.toLowerCase().substring(0,3) === vp.month.toLowerCase().substring(0,3)));
               }
@@ -1166,12 +1358,10 @@
                   }
               };
 
-              // Process Plan Data
               budgetData.records.forEach(b => {
                   const locClean = String(b.location).trim();
                   const headClean = String(b.expenseHead).trim();
 
-                  if (selectedLocation !== 'All' && locClean.toLowerCase() !== selectedLocation.toLowerCase()) return;
                   if (budgetLocFilter !== 'All' && locClean !== budgetLocFilter) return;
 
                   validPeriods.forEach(vp => {
@@ -1183,12 +1373,10 @@
                   });
               });
 
-              // Process Actual Data (Main Sheet)
               data.forEach(r => {
                   const locClean = String(r.location || 'Unknown').trim();
                   const headClean = String(r.expenseHead || 'Uncategorized / Other').trim();
 
-                  if (selectedLocation !== 'All' && locClean.toLowerCase() !== selectedLocation.toLowerCase()) return;
                   if (budgetLocFilter !== 'All' && locClean !== budgetLocFilter) return;
                   if (!r.expenseAmount || r.expenseAmount === 0 || !r.timestamp) return;
 
@@ -1205,12 +1393,10 @@
                   }
               });
 
-              // Process Actual Data (Purchase Sheet mapping to Purchase Stock)
               purchaseData.forEach(r => {
                   const locClean = String(r.location || 'Unknown').trim();
                   const headClean = 'Purchase Stock';
 
-                  if (selectedLocation !== 'All' && locClean.toLowerCase() !== selectedLocation.toLowerCase()) return;
                   if (budgetLocFilter !== 'All' && locClean !== budgetLocFilter) return;
                   if (!r.amount || r.amount === 0 || !r.timestamp) return;
 
@@ -1227,7 +1413,6 @@
                   }
               });
 
-              // Compute Variance & convert to array
               const records = Object.values(headMap).map(row => {
                   let rowVariance = row.totalPlan - row.totalActual;
                   const pData = {};
@@ -1239,7 +1424,6 @@
                   return { ...row, variance: rowVariance, periodsData: pData };
               }).sort((a, b) => a.head.localeCompare(b.head));
 
-              // Compute Grand Totals
               const grandTotals = { plan: 0, actual: 0, variance: 0, periodsData: {} };
               validPeriods.forEach(vp => grandTotals.periodsData[vp.pKey] = { plan: 0, actual: 0, variance: 0 });
 
@@ -1254,41 +1438,15 @@
                   });
               });
 
-              // Clean up empty rows
               const cleanRecords = records.filter(r => r.totalPlan !== 0 || r.totalActual !== 0);
 
               return { records: cleanRecords, periods: validPeriods, totals: grandTotals };
-          }, [budgetData, data, purchaseData, selectedLocation, budgetYearFilter, budgetLocFilter, isSessionView, selectedBudgetMonths]);
+          }, [budgetData, data, purchaseData, effectiveBudgetYear, budgetSessionFilter, budgetLocFilter, isSessionView, selectedBudgetMonths]);
 
-          // ==========================================
-          // BUDGET LOCAL FILTERS & DERIVED DATA
-          // ==========================================
           const { 
-            budgetAvailableYears, 
-            budgetAvailableMonths,
-            budgetLocations, 
-            budgetHeads, 
             filteredBudgetRecords, 
             filteredBudgetTotals 
           } = useMemo(() => {
-              // Available dropdowns from Index Sheet
-              const aYears = Array.from(new Set((budgetData.availablePeriods || []).map(p => p.year))).sort();
-              const aMonths = Array.from(new Set((budgetData.availablePeriods || []).filter(p => p.year === budgetYearFilter).map(p => p.month)));
-
-              const locs = new Set();
-              const heads = new Set();
-              
-              budgetReportData.records.forEach(r => {
-                  locs.add(r.location);
-                  heads.add(r.head);
-              });
-
-              // Populate heads for location view too
-              if (budgetViewMode === 'location') {
-                  locationBudgetReportData.records.forEach(r => heads.add(r.head));
-              }
-
-              // Apply Local Filters (Only for Period View)
               let records = [];
               let plan = 0, actual = 0;
 
@@ -1306,14 +1464,26 @@
               }
 
               return {
-                  budgetAvailableYears: aYears,
-                  budgetAvailableMonths: aMonths,
-                  budgetLocations: Array.from(new Set([...Array.from(locs), ...locations])).sort(), // Merge all known locs
-                  budgetHeads: Array.from(heads).sort(),
                   filteredBudgetRecords: records,
                   filteredBudgetTotals: { plan, actual, variance: plan - actual }
               };
-          }, [budgetData, budgetReportData, locationBudgetReportData, budgetYearFilter, budgetLocFilter, budgetHeadFilter, budgetViewMode, locations]);
+          }, [budgetReportData, budgetLocFilter, budgetHeadFilter, budgetViewMode]);
+
+          // Combine options dynamically
+          const budgetLocations = useMemo(() => {
+              const locs = new Set();
+              budgetReportData.records.forEach(r => locs.add(r.location));
+              if (budgetViewMode === 'location') locationBudgetReportData.records.forEach(r => locs.add(r.head));
+              return Array.from(new Set([...Array.from(locs), ...locations])).sort();
+          }, [budgetReportData, locationBudgetReportData, budgetViewMode, locations]);
+
+          const budgetHeads = useMemo(() => {
+              const heads = new Set();
+              budgetReportData.records.forEach(r => heads.add(r.head));
+              if (budgetViewMode === 'location') locationBudgetReportData.records.forEach(r => heads.add(r.head));
+              return Array.from(heads).sort();
+          }, [budgetReportData, locationBudgetReportData, budgetViewMode]);
+
 
           const formatUtilized = (plan, actual) => {
               if (plan > 0) return ((actual / plan) * 100).toFixed(2) + '%';
@@ -1368,9 +1538,6 @@
             }).format(Number(amount) || 0); 
           };
 
-          // ==========================================
-          // MODAL FILTERING LOGIC
-          // ==========================================
           const modalLocations = useMemo(() => {
             if (!selectedExpenseForDetail) return [];
             const locs = new Set(selectedExpenseForDetail.details.map(item => item.location || 'Unknown'));
@@ -1464,7 +1631,7 @@
                   const totUtilized = formatUtilized(filteredBudgetTotals.plan, filteredBudgetTotals.actual);
                   rows.push(["Grand Total", "", filteredBudgetTotals.plan, filteredBudgetTotals.actual, filteredBudgetTotals.variance, totUtilized]);
                   const csvContent = [headers.join(","), ...rows.map(r => r.map(escapeCSV).join(","))].join("\n");
-                  downloadCSV(csvContent, `Budget_Report_${budgetMonthFilter}_${budgetYearFilter}.csv`);
+                  downloadCSV(csvContent, `Budget_Report_${effectiveBudgetMonth}_${effectiveBudgetYear}.csv`);
               } else {
                   const { records, periods, totals } = locationBudgetReportData;
                   const headers = ["Expense Head"];
@@ -1592,7 +1759,7 @@
                           <X className="w-5 h-5" />
                       </button>
                   </div>
-                  <nav className="flex-1 overflow-y-auto p-2 space-y-0.5 scrollbar-hide mt-2">
+                  <nav className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-hide mt-2">
                       {TABS.map(tab => (
                           <button
                               key={`nav-${tab.id}`}
@@ -2943,7 +3110,7 @@
               {/* Cash Variance Drill-Down Modal */}
               {selectedCashVarDetail && (
                 <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-3 backdrop-blur-sm">
-                  <div className="bg-white rounded-xl shadow-2xl w-full max-w-[400px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[400px] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
                     <div className="flex justify-between items-center px-4 py-3 border-b border-gray-100 bg-gray-50">
                       <div>
                         <h3 className="text-base font-bold text-gray-900">Manager Cash Details</h3>
@@ -2990,41 +3157,41 @@
                               <table className="w-full text-left text-xs">
                                   <thead className="bg-gray-50 border-b border-gray-200 text-gray-500">
                                       <tr>
-                                          <th className="py-1.5 px-3 font-semibold">Notes/Coins</th>
-                                          <th className="py-1.5 px-3 font-semibold text-center">Count</th>
-                                          <th className="py-1.5 px-3 font-semibold text-right">Amount</th>
+                                          <th className="py-1.5 px-3 font-bold uppercase tracking-wider text-xs">Notes/Coins</th>
+                                          <th className="py-1.5 px-3 font-bold uppercase tracking-wider text-xs text-center">Count</th>
+                                          <th className="py-1.5 px-3 font-bold uppercase tracking-wider text-xs text-right">Amount</th>
                                       </tr>
                                   </thead>
                                   <tbody className="divide-y divide-gray-100">
                                       <tr className="hover:bg-gray-50">
-                                          <td className="py-1 px-3 font-medium text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-purple-100 border border-purple-300 rounded-sm inline-block"></span> ₹500</td>
+                                          <td className="py-1 px-3 font-semibold text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-purple-100 border border-purple-300 rounded-sm inline-block"></span> ₹500</td>
                                           <td className="py-1 px-3 text-center font-bold text-gray-800">{selectedCashVarDetail.mgrNotes?.n500 || 0}</td>
-                                          <td className="py-1 px-3 text-right font-medium">{formatCurrency((selectedCashVarDetail.mgrNotes?.n500 || 0) * 500)}</td>
+                                          <td className="py-1 px-3 text-right font-semibold">{formatCurrency((selectedCashVarDetail.mgrNotes?.n500 || 0) * 500)}</td>
                                       </tr>
                                       <tr className="hover:bg-gray-50">
-                                          <td className="py-1 px-3 font-medium text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-orange-100 border border-orange-300 rounded-sm inline-block"></span> ₹200</td>
+                                          <td className="py-1 px-3 font-semibold text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-orange-100 border border-orange-300 rounded-sm inline-block"></span> ₹200</td>
                                           <td className="py-1 px-3 text-center font-bold text-gray-800">{selectedCashVarDetail.mgrNotes?.n200 || 0}</td>
-                                          <td className="py-1 px-3 text-right font-medium">{formatCurrency((selectedCashVarDetail.mgrNotes?.n200 || 0) * 200)}</td>
+                                          <td className="py-1 px-3 text-right font-semibold">{formatCurrency((selectedCashVarDetail.mgrNotes?.n200 || 0) * 200)}</td>
                                       </tr>
                                       <tr className="hover:bg-gray-50">
-                                          <td className="py-1 px-3 font-medium text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-blue-100 border border-blue-300 rounded-sm inline-block"></span> ₹100</td>
+                                          <td className="py-1 px-3 font-semibold text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-blue-100 border border-blue-300 rounded-sm inline-block"></span> ₹100</td>
                                           <td className="py-1 px-3 text-center font-bold text-gray-800">{selectedCashVarDetail.mgrNotes?.n100 || 0}</td>
-                                          <td className="py-1 px-3 text-right font-medium">{formatCurrency((selectedCashVarDetail.mgrNotes?.n100 || 0) * 100)}</td>
+                                          <td className="py-1 px-3 text-right font-semibold">{formatCurrency((selectedCashVarDetail.mgrNotes?.n100 || 0) * 100)}</td>
                                       </tr>
                                       <tr className="hover:bg-gray-50">
-                                          <td className="py-1 px-3 font-medium text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-cyan-100 border border-cyan-300 rounded-sm inline-block"></span> ₹50</td>
+                                          <td className="py-1 px-3 font-semibold text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-cyan-100 border border-cyan-300 rounded-sm inline-block"></span> ₹50</td>
                                           <td className="py-1 px-3 text-center font-bold text-gray-800">{selectedCashVarDetail.mgrNotes?.n50 || 0}</td>
-                                          <td className="py-1 px-3 text-right font-medium">{formatCurrency((selectedCashVarDetail.mgrNotes?.n50 || 0) * 50)}</td>
+                                          <td className="py-1 px-3 text-right font-semibold">{formatCurrency((selectedCashVarDetail.mgrNotes?.n50 || 0) * 50)}</td>
                                       </tr>
                                       <tr className="hover:bg-gray-50">
-                                          <td className="py-1 px-3 font-medium text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-red-100 border border-red-300 rounded-sm inline-block"></span> ₹20</td>
+                                          <td className="py-1 px-3 font-semibold text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-red-100 border border-red-300 rounded-sm inline-block"></span> ₹20</td>
                                           <td className="py-1 px-3 text-center font-bold text-gray-800">{selectedCashVarDetail.mgrNotes?.n20 || 0}</td>
-                                          <td className="py-1 px-3 text-right font-medium">{formatCurrency((selectedCashVarDetail.mgrNotes?.n20 || 0) * 20)}</td>
+                                          <td className="py-1 px-3 text-right font-semibold">{formatCurrency((selectedCashVarDetail.mgrNotes?.n20 || 0) * 20)}</td>
                                       </tr>
                                       <tr className="hover:bg-gray-50">
-                                          <td className="py-1 px-3 font-medium text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-amber-100 border border-amber-300 rounded-sm inline-block"></span> ₹10</td>
+                                          <td className="py-1 px-3 font-semibold text-gray-700 flex items-center gap-2"><span className="w-4 h-3 bg-amber-100 border border-amber-300 rounded-sm inline-block"></span> ₹10</td>
                                           <td className="py-1 px-3 text-center font-bold text-gray-800">{selectedCashVarDetail.mgrNotes?.n10 || 0}</td>
-                                          <td className="py-1 px-3 text-right font-medium">{formatCurrency((selectedCashVarDetail.mgrNotes?.n10 || 0) * 10)}</td>
+                                          <td className="py-1 px-3 text-right font-semibold">{formatCurrency((selectedCashVarDetail.mgrNotes?.n10 || 0) * 10)}</td>
                                       </tr>
                                       <tr className="bg-gray-50 border-t border-gray-200">
                                           <td className="py-1.5 px-3 font-bold text-gray-700 flex items-center gap-2">🪙 Loose / Coins</td>
@@ -3034,7 +3201,7 @@
                                   </tbody>
                               </table>
                           </div>
-                          <p className="text-[10px] text-gray-400 mt-1.5 text-center">Submitted by <span className="font-semibold text-gray-500">{selectedCashVarDetail.mgrManagerName}</span></p>
+                          <p className="text-[10px] text-gray-400 mt-2 text-center font-medium">Submitted by <span className="font-bold text-gray-500">{selectedCashVarDetail.mgrManagerName}</span></p>
                       </div>
                     </div>
                   </div>
